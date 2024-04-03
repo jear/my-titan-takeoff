@@ -1,0 +1,57 @@
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: ratelimit
+  namespace: default
+spec:
+  rateLimit:
+    average: 100
+    burst: 50
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: ipwhitelist
+  namespace: default
+spec:
+  ipWhiteList:
+   sourceRange:
+      - 127.0.0.1/32
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: security
+  namespace: default
+spec:
+  headers:
+    frameDeny: true
+    sslRedirect: true
+    browserXssFilter: true
+    contentTypeNosniff: true
+    stsIncludeSubdomains: true
+    stsPreload: true
+    stsSeconds: 31536000
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: titan-takeoff-service
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`titan-takeoff.83-206-89-106.nip.io`)
+      kind: Rule
+      services:
+        - name: titan-takeoff-service
+          port: 8080
+      middlewares:
+      - name: security
+      - name: ratelimit
+        #     - name: ipwhitelist
+  tls:
+    certResolver: letsencrypt
+
